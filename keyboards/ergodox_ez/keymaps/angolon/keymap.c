@@ -118,11 +118,27 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // we'll need to store these so that we can unregister it when incompatible key/shift inputs are entered.
 static uint16_t dv_key_down = 0;
 static uint16_t kb_key_down = 0;
+static bool shift_down = false;
 
 uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
     switch (dv_key) {
         case DV_DOLLAR: return shifted ? KC_GRAVE : KC_4;
+        case DV_AMPERSAND: return shifted ? KC_5 : KC_7;
         default: return 0;
+    }
+}
+
+void oneshot_mods_changed_user(uint8_t mods) {
+    bool shift_down_next = (mods & MOD_MASK_SHIFT) == MOD_MASK_SHIFT;
+    if (dv_key_down && kb_key_down && shift_down != shift_down_next) {
+        unregister_code16(kb_key_down);
+        if (shift_down_next) {
+            kb_key_down = dv_to_kb_key(dv_key_down, true);
+        } else {
+            kb_key_down = dv_to_kb_key(dv_key_down, false);
+        }
+        register_code16(kb_key_down);
+        shift_down = shift_down_next;
     }
 }
 
