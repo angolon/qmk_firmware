@@ -10,6 +10,7 @@ enum layers {
 enum custom_keycodes {
     DV_DOLLAR = SAFE_RANGE,
     DV_AMPERSAND,
+    DV_SQUARE_OPEN,
 };
 
 // clang-format off
@@ -17,13 +18,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* Keymap 0: Basic layer
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * |   &%   |   [  |   {  |   }  |   (  |   =  | HOME |           | END  |   *  |   )  |   +  |   ]  |   !  |   #    |
+ * |   &%   |  [7  |  {5  |  }3  |  (1  |  =9  | HOME |           | END  |  *0  |  )2  |  +4  |  ]6  |  !8  |   #`   |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
  * |   $~   |  ;:  |  ,<  |  .>  |   P  |   Y  | DEL  |           | Back |   F  |   G  |   C  |   R  |   L  |   /?   |
  * |--------+------+------+------+------+------|      |           | space|------+------+------+------+------+--------|
  * |   \|   |   A  |   O  |   E  |   U  |   I  |------|           |------|   D  |   H  |   T  |   N  |   S  |   -_   |
  * |--------+------+------+------+------+------| TAB  |           | F5   |------+------+------+------+------+--------|
- * | Ctrl-P |  '"  |   Q  |   J  |   K  |   X  |      |           |      |   B  |   M  |   W  |   V  |   Z  |   @    |
+ * | Ctrl-P |  '"  |   Q  |   J  |   K  |   X  |      |           |      |   B  |   M  |   W  |   V  |   Z  |   @^   |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
  *   |Grv/L1| PgDn | PgUp | Down |  Up  |                                       | Left |Right |Ctrl-B| SNIP | ~L1  |
  *   `----------------------------------'                                       `----------------------------------'
@@ -37,11 +38,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 [BASE] = LAYOUT_ergodox_pretty(
   // left hand
-  DV_AMPERSAND,    KC_1,         KC_2,          KC_3,    KC_4,    KC_5,    KC_HOME,                KC_END,     KC_6,    KC_7,     KC_8,    KC_9,              KC_0,           KC_MINS,
-  DV_DOLLAR,       KC_SEMICOLON, KC_COMMA,      KC_DOT,  KC_P,    KC_Y,    KC_DEL,           KC_BACKSPACE,     KC_F,    KC_G,     KC_C,    KC_R,              KC_L,          KC_SLASH,
-  KC_BACKSLASH,    KC_A,         KC_O,          KC_E,    KC_U,    KC_I,                                        KC_D,    KC_H,     KC_T,    KC_N,              KC_S,          KC_MINUS,
-  KC_LSFT,         KC_QUOTE,     KC_Q,          KC_J,    KC_K,    KC_X,    KC_TAB,               KC_F5,        KC_B,    KC_M,     KC_W,    KC_V,              KC_Z,           KC_RSFT,
-  LT(SYMB,KC_GRV), KC_PAGE_DOWN, KC_PAGE_UP, KC_DOWN,   KC_UP,                                                       KC_LEFT, KC_RIGHT, KC_LBRC, KC_RBRC, TT(SYMB),
+  DV_AMPERSAND,    DV_SQUARE_OPEN, KC_2,          KC_3,    KC_4,    KC_5,    KC_HOME,                KC_END,     KC_6,    KC_7,     KC_8,    KC_9,              KC_0,           KC_MINS,
+  DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,  KC_P,    KC_Y,    KC_DEL,           KC_BACKSPACE,     KC_F,    KC_G,     KC_C,    KC_R,              KC_L,          KC_SLASH,
+  KC_BACKSLASH,    KC_A,           KC_O,          KC_E,    KC_U,    KC_I,                                        KC_D,    KC_H,     KC_T,    KC_N,              KC_S,          KC_MINUS,
+  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,    KC_K,    KC_X,    KC_TAB,               KC_F5,        KC_B,    KC_M,     KC_W,    KC_V,              KC_Z,           KC_RSFT,
+  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP, KC_DOWN,   KC_UP,                                                       KC_LEFT, KC_RIGHT, KC_LBRC, KC_RBRC, TT(SYMB),
                                                            ALT_T(KC_APP), KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
                                                                     OSM(MOD_LALT),                KC_VOLU,
                                            OSM(MOD_LSFT), KC_ENTER, OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
@@ -116,9 +117,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 // Because some dvorak keys get mapped to more than one traditional key depending on the shift modifier,
 // we'll need to store these so that we can unregister it when incompatible key/shift inputs are entered.
-static uint16_t dv_key_down = 0;
-static uint16_t kb_key_down = 0;
-static bool shift_down = false;
 
 uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
     switch (dv_key) {
@@ -128,84 +126,35 @@ uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
     }
 }
 
-void oneshot_mods_changed_user(uint8_t mods) {
-    bool shift_down_next = (mods & MOD_MASK_SHIFT) == MOD_MASK_SHIFT;
-    if (dv_key_down && kb_key_down && shift_down != shift_down_next) {
-        unregister_code16(kb_key_down);
-        if (shift_down_next) {
-            kb_key_down = dv_to_kb_key(dv_key_down, true);
-        } else {
-            kb_key_down = dv_to_kb_key(dv_key_down, false);
-        }
-        register_code16(kb_key_down);
-        shift_down = shift_down_next;
-    }
-}
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    uint8_t shifted = get_mods() & MOD_MASK_SHIFT;
-    /* uint8_t os_shifted = get_oneshot_mods() & MOD_MASK_SHIFT; */
+    uint8_t held_shift = get_mods() & MOD_MASK_SHIFT;
+    uint8_t os_shift = get_oneshot_mods() & MOD_MASK_SHIFT;
+    bool shifted = held_shift || os_shift;
     uint16_t mapped;
-    switch (keycode) {
-        case KC_LEFT_SHIFT:
-        case KC_RIGHT_SHIFT:
-            if (dv_key_down && kb_key_down) {
-                unregister_code16(kb_key_down);
-                if (record->event.pressed) {
-                    kb_key_down = dv_to_kb_key(dv_key_down, true);
+    if (record->event.pressed) {
+        switch (keycode) {
+            case DV_SQUARE_OPEN:
+                del_mods(MOD_MASK_SHIFT);
+                del_oneshot_mods(MOD_MASK_SHIFT);
+                if (shifted) {
+                    mapped = KC_7;
                 } else {
-                    kb_key_down = dv_to_kb_key(dv_key_down, false);
+                    mapped = KC_LEFT_BRACKET;
                 }
-                register_code16(kb_key_down);
-                return true;
-            } else {
-                return true;
-            }
-
-        default:
-            mapped = dv_to_kb_key(keycode, shifted);
-            if (mapped) {
-                if (record->event.pressed) {
-                    if (dv_key_down && kb_key_down) {
-                        // Pressing a new DV key, whilst some other DV key is already pressed.
-                        // because we can't handle multiple simultaneous of these keys with their
-                        // shift-state modifying behaviour, we have to trash the old one.
-                        // However we don't need to modify the shift state.
-                        unregister_code16(kb_key_down);
-                    } else {
-                        // The first time a DV key is pressed, it will interfere with 
-                        // other non-DV keys, so turn them off before we mess
-                        // with SHIFT
-                        clear_keyboard_but_mods();
-                        add_mods(MOD_MASK_SHIFT);
-                    }
-                    dv_key_down = keycode;
-                    kb_key_down = mapped;
-                    register_code16(kb_key_down);
-                    return false;
-                } else {
-                    if (keycode == dv_key_down) {
-                        // Probably need to handle the shift state better here - don't delete the modifier
-                        // if the shift key is still physically held down.
-                        del_mods(MOD_MASK_SHIFT);
-                        unregister_code(kb_key_down);
-                        dv_key_down = 0;
-                        kb_key_down = 0;
-                    }
-                    // In the else case, the keyboard has released a key which we've already unregistered.
+                tap_code16(mapped);
+                if(held_shift) {
+                    register_mods(held_shift);
+                }
+                return false;
+                
+            default:
+                mapped = dv_to_kb_key(keycode, shifted);
+                if (mapped) {
+                    tap_code16(LSFT(mapped));
                     return false;
                 }
-
-            } else {
-                if (dv_key_down && kb_key_down) {
-                    // DV keys mess with KB keys, so the converse is true.
-                    dv_key_down = 0;
-                    kb_key_down = 0;
-                    // TODO: also handle whether shift is physically pressed here.
-                    clear_keyboard_but_mods();
-                }
-                return true;
-            }
+                break;
+        }
     }
     return true;
 }
