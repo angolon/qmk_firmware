@@ -164,10 +164,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // TODO: kb_key_down = dv_to_kb_key(dv_key_down, record->event.pressed);
                 if (record->event.pressed) {
                     kb_key_down = dv_to_kb_key(dv_key_down, true);
-                } else {
+                    register_code16(kb_key_down);
+                } else if (!record->tap.count) {
+                    // Only revert to the non-shifted key if this wasn't a tap-shift.
                     kb_key_down = dv_to_kb_key(dv_key_down, false);
+                    register_code16(kb_key_down);
                 }
-                register_code16(kb_key_down);
                 return false;
             } else {
                 return true;
