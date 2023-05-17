@@ -151,6 +151,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     bool shifted = held_shift || os_shift;
     uint16_t mapped;
     switch (keycode) {
+        case OSM(MOD_LSFT):
         case KC_LEFT_SHIFT:
         case KC_RIGHT_SHIFT:
             if (record->event.pressed) {
