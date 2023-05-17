@@ -118,6 +118,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // Because some dvorak keys get mapped to more than one traditional key depending on the shift modifier,
 // we'll need to store these so that we can unregister it when incompatible key/shift inputs are entered.
 
+static uint16_t dv_key_down = 0;
+static uint16_t kb_key_down = 0;
+static uint8_t virtual_shift_mods = 0;
+static uint8_t physical_shift_mods = 0;
+
 uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
     switch (dv_key) {
         case DV_DOLLAR: return shifted ? KC_GRAVE : KC_4;
@@ -126,35 +131,112 @@ uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
     }
 }
 
+/* void oneshot_mods_changed_user(uint8_t mods) { */
+/*     bool shift_down_next = (mods & MOD_MASK_SHIFT) == MOD_MASK_SHIFT; */
+/*     if (dv_key_down && kb_key_down && shift_down != shift_down_next) { */
+/*         unregister_code16(kb_key_down); */
+/*         if (shift_down_next) { */
+/*             kb_key_down = dv_to_kb_key(dv_key_down, true); */
+/*         } else { */
+/*             kb_key_down = dv_to_kb_key(dv_key_down, false); */
+/*         } */
+/*         register_code16(kb_key_down); */
+/*         shift_down = shift_down_next; */
+/*     } */
+/* } */
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     uint8_t held_shift = get_mods() & MOD_MASK_SHIFT;
     uint8_t os_shift = get_oneshot_mods() & MOD_MASK_SHIFT;
     bool shifted = held_shift || os_shift;
     uint16_t mapped;
-    if (record->event.pressed) {
-        switch (keycode) {
-            case DV_SQUARE_OPEN:
-                del_mods(MOD_MASK_SHIFT);
-                del_oneshot_mods(MOD_MASK_SHIFT);
-                if (shifted) {
-                    mapped = KC_7;
+    switch (keycode) {
+        case KC_LEFT_SHIFT:
+        case KC_RIGHT_SHIFT:
+            if (record->event.pressed) {
+                physical_shift_mods |= MOD_BIT(keycode);
+            } else {
+                physical_shift_mods &= ~MOD_BIT(keycode);
+            }
+
+            if (dv_key_down && kb_key_down) {
+                unregister_code16(kb_key_down);
+                // TODO: kb_key_down = dv_to_kb_key(dv_key_down, record->event.pressed);
+                if (record->event.pressed) {
+                    kb_key_down = dv_to_kb_key(dv_key_down, true);
                 } else {
-                    mapped = KC_LEFT_BRACKET;
+                    kb_key_down = dv_to_kb_key(dv_key_down, false);
                 }
-                tap_code16(mapped);
-                if(held_shift) {
-                    register_mods(held_shift);
-                }
+                register_code16(kb_key_down);
                 return false;
-                
-            default:
-                mapped = dv_to_kb_key(keycode, shifted);
-                if (mapped) {
-                    tap_code16(LSFT(mapped));
+            } else {
+                return true;
+            }
+
+        /* case DV_SQUARE_OPEN: */
+        /*     del_mods(MOD_MASK_SHIFT); */
+        /*     del_oneshot_mods(MOD_MASK_SHIFT); */
+        /*     if (shifted) { */
+        /*         mapped = KC_7; */
+        /*     } else { */
+        /*         mapped = KC_LEFT_BRACKET; */
+        /*     } */
+        /*     tap_code16(mapped); */
+        /*     if(held_shift) { */
+        /*         register_mods(held_shift); */
+        /*     } */
+        /*     return false; */
+            
+        default:
+            mapped = dv_to_kb_key(keycode, shifted);
+            if (mapped) {
+                if (record->event.pressed) {
+                    if (dv_key_down && kb_key_down) {
+                        // Pressing a new DV key, whilst some other DV key is already pressed.
+                        // because we can't handle multiple simultaneous of these keys with their
+                        // shift-state modifying behaviour, we have to trash the old one.
+                        // However we don't need to modify the shift state.
+                        unregister_code16(kb_key_down);
+                    } else {
+                        // The first time a DV key is pressed, it will interfere with 
+                        // other non-DV keys, so turn them off before we mess
+                        // with SHIFT
+                        clear_keyboard_but_mods();
+                        virtual_shift_mods = MOD_MASK_SHIFT;
+                        add_mods(virtual_shift_mods);
+                    }
+                    dv_key_down = keycode;
+                    kb_key_down = mapped;
+                    register_code16(kb_key_down);
+                    return false;
+                } else {
+                    // releasing the currently held DV key
+                    if (keycode == dv_key_down) {
+                        // Delete mods that are currently virtual but not physical.
+                        virtual_shift_mods &= ~physical_shift_mods;
+                        del_mods(virtual_shift_mods);
+                        unregister_code(kb_key_down);
+                        dv_key_down = 0;
+                        kb_key_down = 0;
+                        virtual_shift_mods = 0;
+                    }
+
+                    // In the else case, the keyboard has released a key which we've already ungeristered.
                     return false;
                 }
-                break;
-        }
+            } else {
+                // DV keys mess with KB keys, and the converse is also true. So when we push a
+                // KB key with a DV key still held, we need to unregister the DV key.
+                if (dv_key_down && kb_key_down && record->event.pressed) {
+                    dv_key_down = 0;
+                    kb_key_down = 0;
+                    // TODO: also handle whether shift is physically pressed here.
+                    clear_keyboard_but_mods();
+                }
+                return true;
+
+            }
+            break;
     }
     return true;
 }
