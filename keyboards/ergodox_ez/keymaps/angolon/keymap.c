@@ -146,9 +146,8 @@ uint16_t dv_to_kb_key(uint16_t dv_key, bool shifted) {
 /* } */
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    uint8_t held_shift = get_mods() & MOD_MASK_SHIFT;
     uint8_t os_shift = get_oneshot_mods() & MOD_MASK_SHIFT;
-    bool shifted = held_shift || os_shift;
+    bool shifted = physical_shift_mods || os_shift;
     uint16_t mapped;
     switch (keycode) {
         case OSM(MOD_LSFT):
@@ -229,10 +228,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // DV keys mess with KB keys, and the converse is also true. So when we push a
                 // KB key with a DV key still held, we need to unregister the DV key.
                 if (dv_key_down && kb_key_down && record->event.pressed) {
+                    unregister_code(kb_key_down);
                     dv_key_down = 0;
                     kb_key_down = 0;
-                    // TODO: also handle whether shift is physically pressed here.
-                    clear_keyboard_but_mods();
+                    virtual_shift_mods &= ~physical_shift_mods;
+                    del_mods(virtual_shift_mods);
+                    virtual_shift_mods = 0;
                 }
                 return true;
 
