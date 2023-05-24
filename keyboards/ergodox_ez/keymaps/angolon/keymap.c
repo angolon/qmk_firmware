@@ -164,18 +164,16 @@ void swap_dv_key(dv_key_info next_key) {
     }
 
     // If there's no next dvorak key, restore the physical shift modifiers
-    // otherwise just swap to the next virtual shift modifiers.
-    uint8_t next_mods;
-    if (next_key.dv_key) {
-        next_mods = next_key.virtual_shift_mods;
-    } else {
-        next_mods = physical_shift_mods;
+    // by hacking them into the stored NO_DV_KEY 
+    if (!next_key.dv_key) {
+        next_key.virtual_shift_mods = physical_shift_mods;
     }
 
     // Change modifiers as necessary.
-    if (dv_key_down.virtual_shift_mods != next_mods) {
-        uint8_t to_del = dv_key_down.virtual_shift_mods & ~next_mods;
-        uint8_t to_add = next_mods & ~dv_key_down.virtual_shift_mods;
+    uint8_t current_mods = get_mods();
+    if (current_mods != next_key.virtual_shift_mods) {
+        uint8_t to_del = current_mods & ~next_key.virtual_shift_mods;
+        uint8_t to_add = next_key.virtual_shift_mods & ~current_mods;
         if (to_del) {
             del_mods(to_del);
         }
