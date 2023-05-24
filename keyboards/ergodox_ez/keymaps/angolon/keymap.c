@@ -165,25 +165,34 @@ void swap_dv_key(dv_key_info next_key) {
 
     // If there's no next dvorak key, restore the physical shift modifiers
     // by hacking them into the stored NO_DV_KEY 
-    if (!next_key.dv_key) {
-        next_key.virtual_shift_mods = physical_shift_mods;
+    uint8_t next_mods;
+    if (next_key.dv_key) {
+        next_mods = next_key.virtual_shift_mods;
+    } else {
+        next_mods = physical_shift_mods;
     }
 
     // Change modifiers as necessary.
     uint8_t current_mods = get_mods();
-    if (current_mods != next_key.virtual_shift_mods) {
-        uint8_t to_del = current_mods & ~next_key.virtual_shift_mods;
-        uint8_t to_add = next_key.virtual_shift_mods & ~current_mods;
-        if (to_del) {
-            del_mods(to_del);
-        }
-        if (to_add) {
-            add_mods(to_add);
-        }
+    next_mods ^= current_mods;
+    next_mods &= MOD_MASK_SHIFT; // mask bits to just the ones that deal with SHIFT
+    if (next_mods) {
+        next_mods ^= current_mods;
+        set_mods(next_mods);
     }
 
     // Register the new key if it exists.
     if (next_key.kb_key) {
+        // If we're about to send a dvorak key, and the one-shot shift mods are turned on
+        // but the virtual mods need them disabled, we have to do it here.
+        // We only do this when there's going to be a new key registered so that a one-shot
+        // press will persist for the next key press if all we're doing in unregistering 
+        // the current key.
+        next_mods = next_key.virtual_shift_mods;
+        current_mods = get_oneshot_mods() & MOD_MASK_SHIFT;
+        if (current_mods && next_mods == 0) {
+            del_oneshot_mods(current_mods);
+        }
         register_code16(next_key.kb_key);
     }
 
