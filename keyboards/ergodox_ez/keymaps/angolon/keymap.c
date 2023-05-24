@@ -49,14 +49,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 [BASE] = LAYOUT_ergodox_pretty(
   // left hand
-  DV_AMPERSAND,    DV_SQUARE_OPEN, KC_2,          KC_3,    KC_4,    KC_5,    KC_HOME,                KC_END,     KC_6,    KC_7,     KC_8,    KC_9,              KC_0,           KC_MINS,
-  DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,  KC_P,    KC_Y,    KC_DEL,           KC_BACKSPACE,     KC_F,    KC_G,     KC_C,    KC_R,              KC_L,          KC_SLASH,
-  KC_BACKSLASH,    KC_A,           KC_O,          KC_E,    KC_U,    KC_I,                                        KC_D,    KC_H,     KC_T,    KC_N,              KC_S,          KC_MINUS,
-  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,    KC_K,    KC_X,    KC_TAB,               KC_F5,        KC_B,    KC_M,     KC_W,    KC_V,              KC_Z,           KC_RSFT,
-  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP, KC_DOWN,   KC_UP,                                                       KC_LEFT, KC_RIGHT, KC_LBRC, KC_RBRC, TT(SYMB),
-                                                           ALT_T(KC_APP), KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
-                                                                    OSM(MOD_LALT),                KC_VOLU,
-                                           OSM(MOD_LSFT), KC_ENTER, OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
+  DV_AMPERSAND,    DV_SQUARE_OPEN, DV_CURLY_OPEN, DV_CURLY_CLOSE, DV_PAREN_OPEN, DV_EQUAL, KC_HOME,                KC_END, DV_STAR,    DV_PAREN_CLOSE,  DV_PLUS, DV_SQUARE_CLOSE, DV_EXCLAIM,  DV_HASH,
+  DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,         KC_P,          KC_Y,     KC_DEL,           KC_BACKSPACE,    KC_F,              KC_G,     KC_C,            KC_R,       KC_L, KC_SLASH,
+  KC_BACKSLASH,    KC_A,           KC_O,          KC_E,           KC_U,          KC_I,                                        KC_D,              KC_H,     KC_T,            KC_N,       KC_S, KC_MINUS,
+  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,           KC_K,          KC_X,     KC_TAB,                  KC_F5,    KC_B,              KC_M,     KC_W,            KC_V,       KC_Z,    DV_AT,
+  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP,    KC_DOWN,        KC_UP,                                                                      KC_LEFT, KC_RIGHT,         KC_LBRC,    KC_RBRC, TT(SYMB),
+                                                                     ALT_T(KC_APP),       KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
+                                                                                    OSM(MOD_LALT),                KC_VOLU,
+                                                           OSM(MOD_LSFT), KC_ENTER, OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
 ),
 /* Keymap 1: Symbol Layer
  *
@@ -152,6 +152,80 @@ dv_key_info dv_to_kb_key(uint16_t dv_key, bool shifted) {
 
         case DV_SQUARE_OPEN: key.kb_key = shifted ? KC_7 : KC_LEFT_BRACKET;
                              break;
+
+        case DV_CURLY_OPEN: if (shifted) {
+                                key.kb_key = KC_5;
+                            } else {
+                                key.kb_key = KC_LEFT_BRACKET;
+                                key.virtual_shift_mods = MOD_MASK_SHIFT;
+                            }
+                            break;
+
+        case DV_CURLY_CLOSE: if (shifted) {
+                                 key.kb_key = KC_3;
+                             } else {
+                                 key.kb_key = KC_RIGHT_BRACKET;
+                                 key.virtual_shift_mods = MOD_MASK_SHIFT;
+                             }
+                             break;
+
+        case DV_PAREN_OPEN: if (shifted) {
+                                key.kb_key = KC_1;
+                            } else {
+                                key.kb_key = KC_9;
+                                key.virtual_shift_mods = MOD_MASK_SHIFT;
+                            }
+                            break;
+
+        case DV_EQUAL: key.kb_key = shifted ? KC_9 : KC_EQUAL;
+                       break;
+
+        case DV_STAR: if (shifted) {
+                          key.kb_key = KC_0;
+                      } else {
+                          key.kb_key = KC_8;
+                          key.virtual_shift_mods = MOD_MASK_SHIFT;
+                      }
+                      break;
+
+        case DV_PAREN_CLOSE: if (shifted) {
+                                 key.kb_key = KC_2;
+                             } else {
+                                 key.kb_key = KC_0;
+                                 key.virtual_shift_mods = MOD_MASK_SHIFT;
+                             }
+                             break;
+
+        case DV_PLUS: if (shifted) {
+                          key.kb_key = KC_4;
+                      } else {
+                          key.kb_key = KC_EQUAL;
+                          key.virtual_shift_mods = MOD_MASK_SHIFT;
+                      }
+                      break;
+
+        case DV_SQUARE_CLOSE: key.kb_key = shifted ? KC_6 : KC_RIGHT_BRACKET;
+                              break;
+
+        case DV_EXCLAIM: if (shifted) {
+                             key.kb_key = KC_8;
+                         } else {
+                             key.kb_key = KC_1;
+                             key.virtual_shift_mods = MOD_MASK_SHIFT;
+                         }
+                         break;
+
+        case DV_HASH: if (shifted) {
+                          key.kb_key = KC_GRAVE;
+                      } else {
+                          key.kb_key = KC_3;
+                          key.virtual_shift_mods = MOD_MASK_SHIFT;
+                      }
+                      break;
+
+        case DV_AT: key.kb_key = shifted ? KC_6 : KC_2;
+                    key.virtual_shift_mods = MOD_MASK_SHIFT;
+                    break;
     }
 
     return key;
