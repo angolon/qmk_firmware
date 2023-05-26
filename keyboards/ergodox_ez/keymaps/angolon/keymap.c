@@ -1,5 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "version.h"
+#include "dynamic_keymap.h"
 #include "os_detection.h"
 
 enum layers {
@@ -26,6 +27,7 @@ enum custom_keycodes {
 
     // OS dependent control keys/combos.
     DV_APP_LAUNCH,
+    DV_OS_ALT,
 
     // hacky debug stuff.
     DV_PRINT_OS,
@@ -57,13 +59,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [BASE] = LAYOUT_ergodox_pretty(
   // left hand
   DV_AMPERSAND,    DV_SQUARE_OPEN, DV_CURLY_OPEN, DV_CURLY_CLOSE, DV_PAREN_OPEN, DV_EQUAL, KC_HOME,                KC_END, DV_STAR,    DV_PAREN_CLOSE,  DV_PLUS, DV_SQUARE_CLOSE, DV_EXCLAIM,     DV_HASH,
-  DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,         KC_P,          KC_Y,     KC_DEL,           KC_BACKSPACE,    KC_F,              KC_G,     KC_C,            KC_R,       KC_L,    KC_SLASH,
-  KC_BACKSLASH,    KC_A,           KC_O,          KC_E,           KC_U,          KC_I,                                        KC_D,              KC_H,     KC_T,            KC_N,       KC_S,    KC_MINUS,
-  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,           KC_K,          KC_X,     KC_TAB,                  KC_F5,    KC_B,              KC_M,     KC_W,            KC_V,       KC_Z,       DV_AT,
-  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP,    KC_DOWN,        KC_UP,                                                                      KC_LEFT, KC_RIGHT,         KC_LBRC,    KC_RBRC, DV_PRINT_OS,
-                                                                     DV_APP_LAUNCH,       KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
-                                                                                    OSM(MOD_LALT),                KC_VOLU,
-                                                      OSM(MOD_LSFT),      KC_ENTER, OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
+  DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,         KC_P,          KC_Y,      KC_DEL,           KC_BACKSPACE,    KC_F,              KC_G,     KC_C,            KC_R,       KC_L,    KC_SLASH,
+  KC_BACKSLASH,    KC_A,           KC_O,          KC_E,           KC_U,          KC_I,                                         KC_D,              KC_H,     KC_T,            KC_N,       KC_S,    KC_MINUS,
+  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,           KC_K,          KC_X,      KC_TAB,                  KC_F5,    KC_B,              KC_M,     KC_W,            KC_V,       KC_Z,       DV_AT,
+  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP,    KC_DOWN,        KC_UP,                                                                       KC_LEFT, KC_RIGHT,         KC_LBRC,    KC_RBRC, DV_PRINT_OS,
+                                                                     DV_APP_LAUNCH,        KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
+                                                                                         DV_OS_ALT,                KC_VOLU,
+                                                      OSM(MOD_LSFT),      KC_ENTER,  OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
 ),
 /* Keymap 1: Symbol Layer
  *
@@ -333,6 +335,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
+        case DV_OS_ALT:
+            if (record->event.pressed) {
+                SEND_STRING("Dynamic remap code failed.");
+            }
+            return false;
+
         case DV_PRINT_OS:
             if (record->event.pressed) {
                 switch (detected_host_os()) {
@@ -395,6 +403,19 @@ void keyboard_post_init_user(void) {
 #ifdef RGBLIGHT_COLOR_LAYER_0
     rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
 #endif
+    dynamic_keymap_reset();
+    // Remap keys based on the detected host OS.
+
+    switch (detected_host_os()) {
+        case OS_MACOS:
+        case OS_IOS:
+            dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LGUI));
+            break;
+
+        default:
+            dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LALT));
+            break;
+    }
 };
 
 // Runs whenever there is a layer state change.
