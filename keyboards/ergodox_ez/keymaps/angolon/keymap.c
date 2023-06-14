@@ -135,6 +135,17 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
+// Stores the detected host OS. This value is written to EEPROM and controls when the keyboard reconfigures
+// some portions of its layout.
+typedef union {
+    uint32_t raw;
+    struct {
+        os_variant_t current_os;
+    };
+} user_config_t;
+
+static user_config_t user_config;
+
 // Because some dvorak keys get mapped to more than one traditional key depending on the shift modifier,
 // we'll need to store these so that we can unregister it when incompatible key/shift inputs are entered.
 
@@ -398,23 +409,43 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-// Runs just one time when the keyboard initializes.
-void keyboard_post_init_user(void) {
-#ifdef RGBLIGHT_COLOR_LAYER_0
-    rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
-#endif
-    dynamic_keymap_reset();
-    // Remap keys based on the detected host OS.
-
-    switch (detected_host_os()) {
+void remap_os_dependent_keys(os_variant_t os) {
+    switch (os) {
         case OS_MACOS:
         case OS_IOS:
             dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LGUI));
+            dynamic_keymap_set_keycode(0, 12, 5, OSM(MOD_LALT));
+            dynamic_keymap_set_keycode(0, 0, 4, LGUI(LSFT(KC_GRAVE)));
+            dynamic_keymap_set_keycode(0, 13, 4, LGUI(KC_GRAVE));
+
             break;
 
         default:
             dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LALT));
             break;
+    }
+
+    user_config.current_os = os;
+    eeconfig_update_user(user_config.raw);
+}
+
+void eeconfig_init_user(void) {  // EEPROM is getting reset!
+    dynamic_keymap_reset();
+    remap_os_dependent_keys(detected_host_os());
+}
+
+// Runs just one time when the keyboard initializes.
+void keyboard_post_init_user(void) {
+#ifdef RGBLIGHT_COLOR_LAYER_0
+    rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
+#endif
+
+    user_config.raw = eeconfig_read_user();
+    os_variant_t os = detected_host_os();
+
+    if (os != user_config.current_os) {
+        ergodox_blink_all_leds();
+        remap_os_dependent_keys(os);
     }
 };
 
