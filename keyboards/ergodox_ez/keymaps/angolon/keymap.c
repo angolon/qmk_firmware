@@ -1,10 +1,11 @@
 #include QMK_KEYBOARD_H
 #include "version.h"
-#include "dynamic_keymap.h"
 #include "os_detection.h"
 
 enum layers {
     BASE,  // default layer
+    MAC_OS,// mac os specific overlay.
+    WIN_OS,// windows specific overlay. (really just the default overlay at the moment)
     SYMB,  // symbols
     MDIA,  // media keys
 };
@@ -24,13 +25,6 @@ enum custom_keycodes {
     DV_EXCLAIM,
     DV_HASH,
     DV_AT,
-
-    // OS dependent control keys/combos.
-    DV_APP_LAUNCH,
-    DV_OS_ALT,
-
-    // hacky debug stuff.
-    DV_PRINT_OS,
 };
 
 // clang-format off
@@ -46,28 +40,96 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------| TAB  |           | F5   |------+------+------+------+------+--------|
  * | Ctrl-P |  '"  |   Q  |   J  |   K  |   X  |      |           |      |   B  |   M  |   W  |   V  |   Z  |   @^   |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |Grv/L1| PgDn | PgUp | Down |  Up  |                                       | Left |Right |Ctrl-B| SNIP |PRINTOS|
+ *   |XXXXXX| PgDn | PgUp | Down |  Up  |                                       | Left |Right |Ctrl-B| XXXX | XXXX |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
- *                                        |Super | L3   |       | VolUp| Play |
+ *                                        | XXXX | XXXX |       | VolUp| Play |
  *                                 ,------|------|------|       |------+--------+------.
- *                                 |      |      | ALT  |       |VolDwn|        |      |
+ *                                 |      |      | XXXX |       |VolDwn|        |      |
  *                                 | Shift|Enter |------|       |------|  ESC   |Space |
- *                                 |      |      | CTRL |       |Option|        |      |
+ *                                 |      |      | LCTL |       | XXXX |        |      |
  *                                 `--------------------'       `----------------------'
  */
 [BASE] = LAYOUT_ergodox_pretty(
   // left hand
-  DV_AMPERSAND,    DV_SQUARE_OPEN, DV_CURLY_OPEN, DV_CURLY_CLOSE, DV_PAREN_OPEN, DV_EQUAL, KC_HOME,                KC_END, DV_STAR,    DV_PAREN_CLOSE,  DV_PLUS, DV_SQUARE_CLOSE, DV_EXCLAIM,     DV_HASH,
+  DV_AMPERSAND,    DV_SQUARE_OPEN, DV_CURLY_OPEN, DV_CURLY_CLOSE, DV_PAREN_OPEN, DV_EQUAL, KC_HOME,                 KC_END, DV_STAR,    DV_PAREN_CLOSE,  DV_PLUS, DV_SQUARE_CLOSE, DV_EXCLAIM,     DV_HASH,
   DV_DOLLAR,       KC_SEMICOLON,   KC_COMMA,      KC_DOT,         KC_P,          KC_Y,      KC_DEL,           KC_BACKSPACE,    KC_F,              KC_G,     KC_C,            KC_R,       KC_L,    KC_SLASH,
   KC_BACKSLASH,    KC_A,           KC_O,          KC_E,           KC_U,          KC_I,                                         KC_D,              KC_H,     KC_T,            KC_N,       KC_S,    KC_MINUS,
-  KC_LSFT,         KC_QUOTE,       KC_Q,          KC_J,           KC_K,          KC_X,      KC_TAB,                  KC_F5,    KC_B,              KC_M,     KC_W,            KC_V,       KC_Z,       DV_AT,
-  LT(SYMB,KC_GRV), KC_PAGE_DOWN,   KC_PAGE_UP,    KC_DOWN,        KC_UP,                                                                       KC_LEFT, KC_RIGHT,         KC_LBRC,    KC_RBRC, DV_PRINT_OS,
-                                                                     DV_APP_LAUNCH,        KC_LGUI,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
-                                                                                         DV_OS_ALT,                KC_VOLU,
-                                                      OSM(MOD_LSFT),      KC_ENTER,  OSM(MOD_LCTL),          OSM(MOD_LGUI),           KC_ESCAPE, KC_SPACE
+  LCTL(KC_P),      KC_QUOTE,       KC_Q,          KC_J,           KC_K,          KC_X,      KC_TAB,                  KC_F5,    KC_B,              KC_M,     KC_W,            KC_V,       KC_Z,       DV_AT,
+  XXXXXXX,         KC_PAGE_DOWN,   KC_PAGE_UP,    KC_DOWN,        KC_UP,                                                                       KC_LEFT, KC_RIGHT,      LCTL(KC_B),    XXXXXXX,     XXXXXXX,
+                                                                           XXXXXXX,        XXXXXXX,                KC_VOLD, KC_MEDIA_PLAY_PAUSE,
+                                                                                           XXXXXXX,                KC_VOLU,
+                                                      OSM(MOD_LSFT),      KC_ENTER,  OSM(MOD_LCTL),                XXXXXXX,           KC_ESCAPE, KC_SPACE
 ),
-/* Keymap 1: Symbol Layer
+
+/* Keymap 1: MAC OS overlay.
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |------|           |------|      |      |      |      |      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |SFT(GUI(GRV))|    |      |      |      |                                  |      |      |      |      |GUI(GRV)|
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        |APP_L |      |       |      |      |
+ *                                 ,------|------|------|       |------+--------+------.
+ *                                 |      |      | LGUI |       |      |        |      |
+ *                                 |      |      |------|       |------|        |      |
+ *                                 |      |      |      |       |Option|        |      |
+ *                                 `--------------------'       `----------------------'
+ */
+[MAC_OS] = LAYOUT_ergodox_pretty(
+  // left hand
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______,                                    _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  LGUI(LSFT((KC_GRV))), _______, _______, _______, _______,                                                      _______, _______, _______, _______, LGUI(KC_GRV),
+
+                                                   LGUI(KC_SPACE),       _______,           _______, _______,
+                                                                   OSM(MOD_LGUI),           _______,
+                                          _______,        _______,       _______,     OSM(MOD_LALT), _______, _______
+),
+
+/* Keymap 2: WIN OS overlay.
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |------|           |------|      |      |      |      |      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |ALT-SFT-TAB  |    |      |      |      |                                  |      |      |      |      |ALT-TAB |
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        | GUI  |      |       |      |      |
+ *                                 ,------|------|------|       |------+--------+------.
+ *                                 |      |      | ALT  |       |      |        |      |
+ *                                 |      |      |------|       |------|        |      |
+ *                                 |      |      |      |       | ???  |        |      |
+ *                                 `--------------------'       `----------------------'
+ */
+[WIN_OS] = LAYOUT_ergodox_pretty(
+  // left hand
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______,                                    _______, _______, _______, _______, _______,      _______,
+  _______,              _______, _______, _______, _______, _______, _______,                  _______, _______, _______, _______, _______, _______,      _______,
+  LALT(LSFT((KC_TAB))), _______, _______, _______, _______,                                                      _______, _______, _______, _______, LALT(KC_TAB),
+
+                                                   KC_LGUI,       _______,           _______, _______,
+                                                            OSM(MOD_LALT),           _______,
+                                          _______, _______,       _______,           XXXXXXX, _______, _______
+),
+/* Keymap 3: Symbol Layer
  *
  * ,---------------------------------------------------.           ,--------------------------------------------------.
  * |Version  |  F1  |  F2  |  F3  |  F4  |  F5  |      |           |      |  F6  |  F7  |  F8  |  F9  |  F10 |   F11  |
@@ -99,7 +161,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                                         _______,     _______,
                                       RGB_VAD, RGB_VAI, _______,     _______, RGB_HUD, RGB_HUI
 ),
-/* Keymap 2: Media and mouse keys
+/* Keymap 4: Media and mouse keys
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
  * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
@@ -134,17 +196,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 };
 // clang-format on
-
-// Stores the detected host OS. This value is written to EEPROM and controls when the keyboard reconfigures
-// some portions of its layout.
-typedef union {
-    uint32_t raw;
-    struct {
-        os_variant_t current_os;
-    };
-} user_config_t;
-
-static user_config_t user_config;
 
 // Because some dvorak keys get mapped to more than one traditional key depending on the shift modifier,
 // we'll need to store these so that we can unregister it when incompatible key/shift inputs are entered.
@@ -331,49 +382,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return true;
             }
 
-        case DV_APP_LAUNCH:
-            if (record->event.pressed) {
-                switch (detected_host_os()) {
-                    case OS_MACOS:
-                    case OS_IOS:
-                        tap_code16(LGUI(KC_SPACE));
-                        break;
-
-                    default:
-                        tap_code(KC_LGUI);
-                        break;
-                }
-            }
-            return false;
-
-        case DV_OS_ALT:
-            if (record->event.pressed) {
-                SEND_STRING("Dynamic remap code failed.");
-            }
-            return false;
-
-        case DV_PRINT_OS:
-            if (record->event.pressed) {
-                switch (detected_host_os()) {
-                    case OS_UNSURE:
-                        SEND_STRING("Unsure of detected OS");
-                        break;
-                    case OS_LINUX:
-                        SEND_STRING("detected host OS: linux");
-                        break;
-                    case OS_WINDOWS:
-                        SEND_STRING("detected host OS: windows");
-                        break;
-                    case OS_MACOS:
-                        SEND_STRING("detected host OS: macos");
-                        break;
-                    case OS_IOS:
-                        SEND_STRING("detected host OS: ios");
-                        break;
-                }
-            }
-            return false;
-
         default:
             mapped = dv_to_kb_key(keycode, shifted);
             if (mapped.kb_key) {
@@ -409,43 +417,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-void remap_os_dependent_keys(os_variant_t os) {
-    switch (os) {
-        case OS_MACOS:
-        case OS_IOS:
-            dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LGUI));
-            dynamic_keymap_set_keycode(0, 12, 5, OSM(MOD_LALT));
-            dynamic_keymap_set_keycode(0, 0, 4, LGUI(LSFT(KC_GRAVE)));
-            dynamic_keymap_set_keycode(0, 13, 4, LGUI(KC_GRAVE));
-
-            break;
-
-        default:
-            dynamic_keymap_set_keycode(0, 4, 5, OSM(MOD_LALT));
-            break;
-    }
-
-    user_config.current_os = os;
-    eeconfig_update_user(user_config.raw);
-}
-
-void eeconfig_init_user(void) {  // EEPROM is getting reset!
-    dynamic_keymap_reset();
-    remap_os_dependent_keys(detected_host_os());
-}
-
 // Runs just one time when the keyboard initializes.
 void keyboard_post_init_user(void) {
 #ifdef RGBLIGHT_COLOR_LAYER_0
     rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
 #endif
 
-    user_config.raw = eeconfig_read_user();
-    os_variant_t os = detected_host_os();
+    switch (detected_host_os()) {
+        case OS_MACOS:
+        case OS_IOS:
+            layer_on(MAC_OS);
+            break;
 
-    if (os != user_config.current_os) {
-        ergodox_blink_all_leds();
-        remap_os_dependent_keys(os);
+        default:
+            layer_on(WIN_OS);
+            break;
     }
 };
 
